@@ -1,0 +1,32 @@
+name: .NET Core
+
+on: [push] 
+
+env:
+  NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
+  PACKAGE_VERSION_PREFIX: 8
+
+jobs:
+  build:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET Core 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: |
+          8.0.x
+    - name: Restore Workloads
+      run:  dotnet workload restore
+    - name: Restore Dependencies
+      run: dotnet restore
+    - name: Create NuGet Packages
+      run: |
+        echo "Packing..."
+        dotnet pack --configuration Release ./Adriva.Camera.Maui/Adriva.Camera.Maui.csproj -p:dotnet=$PACKAGE_VERSION_PREFIX        
+    - name: Push Packages
+      run:  |
+        echo "Pushing packages to Nuget"
+        dotnet nuget push "./Adriva.Camera.Maui/bin/Release/Adriva.Camera.Maui.$PACKAGE_VERSION_PREFIX.*.nupkg" --api-key $NUGET_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
